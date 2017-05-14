@@ -17,8 +17,11 @@
 import datetime
 import logging
 import subprocess
+import xml.etree.ElementTree as ET
 
 import actionbase
+
+import requests
 
 # =============================================================================
 #
@@ -194,6 +197,30 @@ class RepeatAfterMe(object):
         self.say(to_repeat)
 
 
+class PlayMe(object):
+    """Plays various podcasts, and maybe other things eventually"""
+    PODCASTS = {'up first': 'https://www.npr.org/rss/podcast.php?id=510318',
+                'newscast': 'https://www.npr.org/rss/podcast.php?id=510318'}
+    def __init__(self, say):
+        self.say = say
+        self._cmd = ['cvlc']
+
+    def run(self, voice_command):
+        for keyword, url in self.PODCASTS:
+            if keyword in voice_command:
+                self._play(url)
+                return
+
+    def _play(self, url):
+        r = requests.get(url)
+        xml = ET.fromstring(r.text)
+        audio_url = xml.find('channel').find('item').find('enclosure').attrib['url']
+
+        player = subprocess.Popen(self._cmd + [audio_url])
+        player.wait()
+        return
+
+
 # =========================================
 # Makers! Implement your own actions here.
 # =========================================
@@ -219,6 +246,8 @@ def make_actor(say):
     # =========================================
     # Makers! Add your own voice commands here.
     # =========================================
+
+    actor.add_keyword('play me', PlayMe(say))
 
     return actor
 

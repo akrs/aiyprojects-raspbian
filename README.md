@@ -1,5 +1,6 @@
 This repository contains the source code for the AIYProjects "Voice Kit". See
-https://aiyprojects.withgoogle.com/voice/
+https://aiyprojects.withgoogle.com/voice/, I've forked it to do my own tweaks
+and actions.
 
 ## Troubleshooting
 
