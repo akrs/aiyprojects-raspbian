@@ -205,7 +205,7 @@ class RepeatAfterMe(object):
 class PlayMe(object):
     """Plays various podcasts, and maybe other things eventually"""
     PODCASTS = {'up first': 'https://www.npr.org/rss/podcast.php?id=510318',
-                'newscast': 'https://www.npr.org/rss/podcast.php?id=510318'}
+                'news cast': 'https://www.npr.org/rss/podcast.php?id=510318'}
     def __init__(self, say):
         self.say = say
         self._cmd = ['cvlc']
