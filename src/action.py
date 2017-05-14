@@ -197,6 +197,11 @@ class RepeatAfterMe(object):
         self.say(to_repeat)
 
 
+# =========================================
+# Makers! Implement your own actions here.
+# =========================================
+
+
 class PlayMe(object):
     """Plays various podcasts, and maybe other things eventually"""
     PODCASTS = {'up first': 'https://www.npr.org/rss/podcast.php?id=510318',
@@ -206,7 +211,7 @@ class PlayMe(object):
         self._cmd = ['cvlc']
 
     def run(self, voice_command):
-        for keyword, url in self.PODCASTS:
+        for keyword, url in self.PODCASTS.items():
             if keyword in voice_command:
                 self._play(url)
                 return
@@ -219,11 +224,6 @@ class PlayMe(object):
         player = subprocess.Popen(self._cmd + [audio_url])
         player.wait()
         return
-
-
-# =========================================
-# Makers! Implement your own actions here.
-# =========================================
 
 
 def make_actor(say):
