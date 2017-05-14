@@ -206,22 +206,32 @@ class PlayMe(object):
     """Plays various podcasts, and maybe other things eventually"""
     PODCASTS = {'up first': 'https://www.npr.org/rss/podcast.php?id=510318',
                 'news cast': 'https://www.npr.org/rss/podcast.php?id=500005'}
+
+    FILES = {'test': 'https://ia802508.us.archive.org/5/items/testmp3testfile/mpthreetest.mp3'}
+
     def __init__(self, say):
         self.say = say
-        self._cmd = ['cvlc']
+        self._cmd = ['cvlc', '--play-and-exit']
 
     def run(self, voice_command):
         for keyword, url in self.PODCASTS.items():
             if keyword in voice_command:
-                self._play(url)
+                self._play_pod(url)
                 return
 
-    def _play(self, url):
+        for keyword, url in self.FILES.items():
+            if keyword in voice_command:
+                self._play_url(url)
+                return
+
+    def _play_pod(self, url):
         r = requests.get(url)
         xml = ET.fromstring(r.text)
         audio_url = xml.find('channel').find('item').find('enclosure').attrib['url']
+        self._play_url(audio_url)
 
-        player = subprocess.Popen(self._cmd + [audio_url])
+    def _play_url(self, url):
+        player = subprocess.Popen(self._cmd + [url])
         player.wait()
         return
 
