@@ -35,6 +35,11 @@ class Recorder(threading.Thread):
     """Stream audio from microphone in a background thread and run processing
     callbacks. It reads audio in a configurable format from the microphone,
     then converts it to a known format before passing it to the processors.
+
+    This driver accumulates input (audio samples) in a local buffer. Once the
+    buffer contains more than CHUNK_S seconds, it passes the chunk to all
+    processors. An audio processor defines a 'add_data' method that receives
+    the chunk of audio samples to process.
     """
 
     CHUNK_S = 0.1
@@ -74,7 +79,10 @@ class Recorder(threading.Thread):
         self._processors.append(processor)
 
     def del_processor(self, processor):
-        self._processors.remove(processor)
+        if processor in self._processors:
+            self._processors.remove(processor)
+        else:
+            logger.warn("processor was not found in the list")
 
     def run(self):
         """Reads data from arecord and passes to processors."""
@@ -165,7 +173,7 @@ class Player(object):
 
         with wave.open(wav_path, 'r') as wav:
             if wav.getnchannels() != 1:
-                raise ValueError(wav_path + 'is not a mono file')
+                raise ValueError(wav_path + ' is not a mono file')
 
             frames = wav.readframes(wav.getnframes())
             self.play_bytes(frames, wav.getframerate(), wav.getsampwidth())

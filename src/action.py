@@ -19,6 +19,9 @@ import logging
 import subprocess
 import xml.etree.ElementTree as ET
 
+import phue
+from rgbxy import Converter
+
 import actionbase
 
 import requests
@@ -197,6 +200,67 @@ class RepeatAfterMe(object):
         self.say(to_repeat)
 
 
+# Example: Change Philips Light Color
+# ====================================
+#
+# This example will change the color of the named bulb to that of the
+# HEX RGB color and respond with 'ok'
+#
+# actor.add_keyword(_('change to ocean blue'), \
+# 		ChangeLightColor(say, "philips-hue", "Lounge Lamp", "0077be"))
+
+class ChangeLightColor(object):
+
+    """Change a Philips Hue bulb color."""
+
+    def __init__(self, say, bridge_address, bulb_name, hex_color):
+        self.converter = Converter()
+        self.say = say
+        self.hex_color = hex_color
+        self.bulb_name = bulb_name
+        self.bridge_address = bridge_address
+
+    def run(self):
+        bridge = self.find_bridge()
+        if bridge:
+            light = bridge.get_light_objects("name")[self.bulb_name]
+            light.on = True
+            light.xy = self.converter.hex_to_xy(self.hex_color)
+            self.say(_("Ok"))
+
+    def find_bridge(self):
+        try:
+            bridge = phue.Bridge(self.bridge_address)
+            bridge.connect()
+            return bridge
+        except phue.PhueRegistrationException:
+            logging.info("hue: No bridge registered, press button on bridge and try again")
+            self.say(_("No bridge registered, press button on bridge and try again"))
+
+
+# Power: Shutdown or reboot the pi
+# ================================
+# Shuts down the pi or reboots with a response
+#
+
+class PowerCommand(object):
+    """Shutdown or reboot the pi"""
+
+    def __init__(self, say, command):
+        self.say = say
+        self.command = command
+
+    def run(self, voice_command):
+        if self.command == "shutdown":
+            self.say("Shutting down, goodbye")
+            subprocess.call("sudo shutdown now", shell=True)
+        elif self.command == "reboot":
+            self.say("Rebooting")
+            subprocess.call("sudo shutdown -r now", shell=True)
+        else:
+            logging.error("Error identifying power command.")
+            self.say("Sorry I didn't identify that command")
+
 # =========================================
 # Makers! Implement your own actions here.
 # =========================================
@@ -256,8 +320,9 @@ def make_actor(say):
     # =========================================
     # Makers! Add your own voice commands here.
     # =========================================
-
     actor.add_keyword('play me', PlayMe(say))
+    actor.add_keyword(_('raspberry power off'), PowerCommand(say, 'shutdown'))
+    actor.add_keyword(_('raspberry reboot'), PowerCommand(say, 'reboot'))
 
     return actor
 

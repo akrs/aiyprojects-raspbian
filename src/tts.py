@@ -19,7 +19,6 @@ import logging
 import os
 import subprocess
 import tempfile
-import wave
 
 import numpy as np
 from scipy import signal
@@ -35,9 +34,9 @@ SAMPLE_RATE = 16000
 # Parameters for the equalization filter. These remove low-frequency sound
 # from the result, avoiding resonance on the speaker and making the TTS easier
 # to understand. Calculated with:
-#   python3 src/tts.py --hpf-order 4 --hpf-freq-hz 1400 --hpf-gain-db 8
+#   python3 src/tts.py --hpf-order 4 --hpf-freq-hz 1400 --hpf-gain-db 4
 FILTER_A = np.array([1., -3.28274474, 4.09441957, -2.29386174, 0.48627065])
-FILTER_B = np.array([1.75161639, -7.00646555, 10.50969833, -7.00646555, 1.75161639])
+FILTER_B = np.array([1.10519522, -4.4207809, 6.63117135, -4.4207809, 1.10519522])
 
 logger = logging.getLogger('tts')
 
@@ -87,29 +86,16 @@ def say(player, words, eq_filter=None, lang='en-US'):
     os.close(fd)
 
     try:
-        subprocess.call(['pico2wave', '-l', lang, '-w', raw_wav, words.encode('utf-8')])
-        with wave.open(raw_wav, 'rb') as f:
-            raw_bytes = f.readframes(f.getnframes())
+        subprocess.call(['pico2wave', '--lang', lang, '-w', raw_wav, words])
+        subprocess.call(['play', raw_wav, '--no-show-progress', '--guard'])
     finally:
         os.unlink(raw_wav)
-
-    # Deserialize and apply equalization filter
-    eq_audio = np.frombuffer(raw_bytes, dtype=np.int16)
-    if eq_filter:
-        eq_audio = eq_filter(eq_audio)
-
-    # Clip and serialize
-    int16_info = np.iinfo(np.int16)
-    eq_audio = np.clip(eq_audio, int16_info.min, int16_info.max)
-    eq_bytes = eq_audio.astype(np.int16).tostring()
-
-    player.play_bytes(eq_bytes, sample_rate=SAMPLE_RATE)
 
 
 def main():
     import argparse
 
-    import audio
+    import aiy.audio
 
     logging.basicConfig(level=logging.INFO)
 
@@ -122,7 +108,7 @@ def main():
 
     if args.words:
         words = ' '.join(args.words)
-        player = audio.Player()
+        player = aiy.audio.Player()
         create_say(player)(words)
 
     if args.hpf_order:
